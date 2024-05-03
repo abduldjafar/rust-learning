@@ -46,3 +46,6 @@ Caused by: java.nio.file.FileSystemNotFoundException: Provider "untitled" not in
 	at scala.meta.metals.lsp.DelegatingScalaService.didFocus(DelegatingScalaService.scala:43)
 	... 16 more
 
+2024.05.03 15:58:25 INFO  Shutting down server
+2024.05.03 15:58:25 INFO  shutting down Metals
+2024.05.03 15:58:25 INFO  Exiting server
