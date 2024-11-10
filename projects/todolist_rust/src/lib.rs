@@ -8,15 +8,19 @@
  * 
  * Core Components:
  * - Task Struct:
- *   - Fields: `description` (String), `completed` (bool), `priority` (Option<i64>), `due_date` (Option<i64>).
+ *   - Fields: 
+ *     - `description` (String): The description of the task.
+ *     - `completed` (bool): The completion status of the task.
+ *     - `priority` (Option<i64>): The priority of the task (1 = Low, 2 = Medium, 3 = High).
+ *     - `due_date` (Option<i64>): The due date of the task, represented in `YYYYMMDD` format.
  *   - Purpose: Represents a single task with its description, completion state, priority, and due date.
  * 
  * - TaskManager Struct:
  *   - Manages a collection of tasks and provides various methods.
  *   - Methods:
  *     - `add_task`: Adds a new task with a given description, priority, and due date.
- *     - `view_tasks`: Displays all tasks and their completion status.
- *     - `mark_complete`: Marks a specified task as completed.
+ *     - `view_tasks`: Displays all tasks with their descriptions and completion status.
+ *     - `mark_complete`: Marks a specified task as completed based on its index.
  *     - `to_json`: Saves the current list of tasks to a JSON file.
  *     - `from_json`: Loads tasks from a JSON file into the TaskManager.
  ***/
@@ -29,10 +33,17 @@
  #[derive(Parser, Debug)]
  #[command(version, about, long_about = None)]
  struct Args {
-     /// Add a new task with a specified description, priority (1-3), and due date (YYYYMMDD).
-     /// Example: "task description,1,20240909" (priority 1 is low, 2 is medium, and 3 is high)
-     #[arg(short, long, default_value = "")]
-     add: String,
+    /// Add a new task with a specified description, priority (1-3), and due date (YYYYMMDD)
+    /// 
+    /// The format is: "task description,priority,duedate
+    /// 
+    /// - priority: 1 (low), 2 (medium), 3 (high)
+    /// 
+    /// - duedate: in the format YYYYMMDD
+    /// 
+    /// Example: "task description,1,20240909"
+    #[clap(short, long, default_value = "",verbatim_doc_comment)]
+    add: String,
  
      /// List all tasks with their completion status.
      #[arg(long, default_value_t = false)]
@@ -198,40 +209,39 @@
  }
  
  #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_task_creation(){
-        let mut task_manager = TaskManager::new();
-        task_manager.add_task(Task {
-            description: String::from("haloa"),
-            completed: false,
-            priority: Some(1),
-            due_date: Some(20241111),
-        });
-
-        assert_eq!(task_manager.tasks.get(0).unwrap().description, "haloa");
-        assert_eq!(task_manager.tasks.get(0).unwrap().completed, false);
-        assert_eq!(task_manager.tasks.get(0).unwrap().priority, Some(1));
-        assert_eq!(task_manager.tasks.get(0).unwrap().due_date, Some(20241111));
-    }
-
-    #[test]
-    fn test_task_completed_mark() -> Result<(), std::io::Error> {
-        let mut task_manager = TaskManager::new();
-        task_manager.add_task(Task {
-            description: String::from("haloa"),
-            completed: false,
-            priority: Some(1),
-            due_date: Some(20241111),
-        });
-
-        task_manager.mark_complete(0)?;
-
-        assert_eq!(task_manager.tasks.get(0).unwrap().completed, true);
-
-
-        Ok(())
-    }
-}
+ mod tests {
+     use super::*;
+ 
+     #[test]
+     fn test_task_creation() {
+         let mut task_manager = TaskManager::new();
+         task_manager.add_task(Task {
+             description: String::from("Sample task"),
+             completed: false,
+             priority: Some(2),
+             due_date: Some(20241111),
+         });
+ 
+         assert_eq!(task_manager.tasks.get(0).unwrap().description, "Sample task");
+         assert_eq!(task_manager.tasks.get(0).unwrap().completed, false);
+         assert_eq!(task_manager.tasks.get(0).unwrap().priority, Some(2));
+         assert_eq!(task_manager.tasks.get(0).unwrap().due_date, Some(20241111));
+     }
+ 
+     #[test]
+     fn test_task_completed_mark() -> Result<(), std::io::Error> {
+         let mut task_manager = TaskManager::new();
+         task_manager.add_task(Task {
+             description: String::from("Complete me"),
+             completed: false,
+             priority: Some(3),
+             due_date: Some(20241212),
+         });
+ 
+         task_manager.mark_complete(0)?;
+ 
+         assert_eq!(task_manager.tasks.get(0).unwrap().completed, true);
+         Ok(())
+     }
+ }
+ 
