@@ -147,7 +147,7 @@
  }
  
  /// Entry point of the program
- fn app() -> Result<(), std::io::Error> {
+ pub fn app() -> Result<(), std::io::Error> {
      let args = Args::parse(); // Parse command-line arguments
      let mut task_manager = TaskManager::new();
      task_manager.initial_load()?; // Load initial tasks
