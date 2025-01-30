@@ -10,8 +10,10 @@ clap = { version = "4.5.20", features = ["derive"] }
 serde = { version = "1.0.202", features = ["derive"] }
 serde_json = "1.0.117"
 todolist_rust = { path = "projects/todolist_rust" }
+future_rust = { path = "projects/future_rust" }
 
 [workspace]
 members = [
     "projects/todolist_rust",
+    "projects/future_rust"
 ]
