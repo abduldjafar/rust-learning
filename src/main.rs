@@ -2,8 +2,7 @@ use todolist_rust;
 use future_rust;
 
 fn main() -> Result<(), std::io::Error> {
-    let data = &[2,3,1];
-    print!("{:?}",p(data));
+    future_rust::run();
     Ok(())
 
 }
