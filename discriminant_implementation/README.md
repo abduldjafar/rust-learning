@@ -1,7 +1,3 @@
-Of course! Here's a clean `README.md` you can use:
-
----
-
 # Discriminant Calculator
 
 A simple Rust CLI tool to calculate the **discriminant** \( D = b^2 - 4ac \) of a quadratic equation \( ax^2 + bx + c = 0 \).
