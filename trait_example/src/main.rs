@@ -1,5 +1,6 @@
 use trait_example::{sinks::{Sink, Sinker}, sources::{ParquetSource, Source}};
-use trait_example::pipelines::{Pipeline, SimplePipeline};
+use trait_example::pipelines::simple::SimplePipeline;
+use trait_example::pipelines::Pipeline;
 
 
 

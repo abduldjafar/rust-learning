@@ -1,13 +1,8 @@
 use polars::{error::PolarsResult, frame::DataFrame};
-use crate::{sinks::{Sink, Sinker}, sources::ParquetSource, sources::Source};
+use crate::{pipelines::Pipeline, sinks::{Sink, Sinker}, sources::{ParquetSource, Source}};
 
 
-pub trait Pipeline {
-    fn run(&self) -> PolarsResult<()>
-    {
-        Ok(())
-    }
-}
+
 
 #[derive(Clone)]
 pub struct SimplePipeline {
