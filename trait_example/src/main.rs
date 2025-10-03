@@ -1,13 +1,9 @@
-use trait_example::{sinks::{Sink, Sinker}, sources::{ParquetSource, Source}};
-use trait_example::pipelines::simple::SimplePipeline;
-use trait_example::pipelines::Pipeline;
+use trait_example::{jobs::{Job, SimpleJob}};
+
 
 
 
 fn main() {
-    let parquet_source = ParquetSource::new();
-    let sink = Sinker::Csv("output.csv".to_string());
-    let pipeline = SimplePipeline::new(parquet_source, sink);
-    pipeline.run().unwrap();
-
+    let job = SimpleJob::set("simple".to_string(), "0 * * * *".to_string());
+    job.run().unwrap();
 }
