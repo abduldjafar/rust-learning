@@ -15,11 +15,11 @@ pub enum SourceKind {
 }
 
 impl SourceKind {
-    pub fn set_postgres(name: String) -> Self {
+    pub fn read_postgres(name: String) -> Self {
         SourceKind::Parquet { name }
     }
 
-    pub fn set_parquet(name: String) -> Self {
+    pub fn read_parquet(name: String) -> Self {
         SourceKind::Parquet { name }
     }
 }

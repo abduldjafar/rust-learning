@@ -10,6 +10,12 @@ pub enum Sinker {
     Csv(String),
 }
 
+impl Sinker {
+    pub fn write_csv(path: String) -> Self {
+        Sinker::Csv(path)
+    }
+}
+
 impl Sink for Sinker {
     fn save_data(&self, df: &DataFrame) -> PolarsResult<()> {
         match self {

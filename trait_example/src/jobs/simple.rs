@@ -1,8 +1,8 @@
 use crate::{
     jobs::SimpleJob,
     pipelines::{Pipeline, simple::SimplePipeline},
-    sinks::Sinker,
-    sources::SourceKind,
+    sinks::Sinker as sinker,
+    sources::SourceKind as source,
 };
 
 impl SimpleJob {
@@ -15,8 +15,8 @@ impl SimpleJob {
     }
 
     pub(crate) fn start(&self) -> polars::prelude::PolarsResult<()> {
-        let parquet_source = SourceKind::set_postgres("parquet".to_string());
-        let sink = Sinker::Csv("output.csv".to_string());
+        let parquet_source = source::read_parquet("parquet".to_string());
+        let sink = sinker::write_csv("output.csv".to_string());
         let pipeline = SimplePipeline::new(parquet_source, sink);
         pipeline.run().unwrap();
         Ok(())
