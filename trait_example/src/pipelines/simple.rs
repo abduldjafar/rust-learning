@@ -1,17 +1,17 @@
 use polars::{error::PolarsResult, frame::DataFrame};
-use crate::{pipelines::Pipeline, sinks::{Sink, Sinker}, sources::{ParquetSource, Source}};
+use crate::{pipelines::Pipeline, sinks::{Sink, Sinker}, sources::{ Source, SourceKind}};
 
 
 
 
 #[derive(Clone)]
 pub struct SimplePipeline {
-    source: ParquetSource,
+    source: SourceKind,
     sink: Sinker,
 }
 
 impl SimplePipeline {
-    pub fn new(source: ParquetSource, sink: Sinker) -> Self {
+    pub fn new(source: SourceKind, sink: Sinker) -> Self {
         Self { source, sink }
     }
 }

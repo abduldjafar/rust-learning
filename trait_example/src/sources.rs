@@ -2,35 +2,41 @@ use polars::prelude::*;
 
 pub trait Source {
     fn load_data(&self) -> PolarsResult<DataFrame>;
-    fn get_name(&self) -> String;
 }
 
 #[derive(Clone)]
-pub struct ParquetSource {
-    name: String,
+pub enum SourceKind {
+    Parquet { name: String /*, path: PathBuf */ },
+    Postgres { name: String /*, dsn: String, query: String */ },
 }
 
-impl ParquetSource {
-    pub fn new() -> Self {
-        Self {
-            name: "parquet".to_string(),
-        }
+impl SourceKind {
+    pub fn set_postgres(name: String) -> Self {
+        SourceKind::Parquet { name }
+    }
+
+    pub fn set_parquet(name: String) -> Self {
+        SourceKind::Parquet { name }
     }
 }
 
-impl Source for ParquetSource {
+impl Source for SourceKind {
     fn load_data(&self) -> PolarsResult<DataFrame> {
-        let df = df![
-            "a" => &[1, 2, 3],
-            "b" => &[4, 5, 6]
-        ]?;
-        Ok(df)
-
-        // Or real parquet:
-        // LazyFrame::scan_parquet(&self.path, Default::default())?.collect()
-    }
-
-    fn get_name(&self) -> String {
-        self.name.clone()
+        match self {
+            SourceKind::Parquet { name } => {
+                let df = df![
+                    "a" => &[1, 2, 3],
+                    "b" => &[4, 5, 6]
+                ]?;
+                Ok(df)
+            }   
+            SourceKind::Postgres { name } => {
+                let df = df![
+                    "a" => &[1, 2, 3],
+                    "b" => &[4, 5, 6]
+                ]?;
+                Ok(df)
+            }
+        }
     }
 }

@@ -1,4 +1,4 @@
-use crate::{ jobs::{Job, SimpleJob}, pipelines::{simple::SimplePipeline, Pipeline}, sinks::Sinker, sources::ParquetSource};
+use crate::{ jobs::SimpleJob, pipelines::{simple::SimplePipeline, Pipeline}, sinks::Sinker, sources::{ SourceKind}};
 
 
 impl SimpleJob {
@@ -7,7 +7,7 @@ impl SimpleJob {
     }
 
     pub(crate) fn start(&self) -> polars::prelude::PolarsResult<()> {
-        let parquet_source = ParquetSource::new();
+        let parquet_source = SourceKind::set_postgres("parquet".to_string());
         let sink = Sinker::Csv("output.csv".to_string());
         let pipeline = SimplePipeline::new(parquet_source, sink);
         pipeline.run().unwrap();
