@@ -1,9 +1,17 @@
-use crate::{ jobs::SimpleJob, pipelines::{simple::SimplePipeline, Pipeline}, sinks::Sinker, sources::{ SourceKind}};
-
+use crate::{
+    jobs::SimpleJob,
+    pipelines::{Pipeline, simple::SimplePipeline},
+    sinks::Sinker,
+    sources::SourceKind,
+};
 
 impl SimpleJob {
     pub fn set(name: String, schedule: String) -> Self {
-        Self { name, schedule, status: "idle".to_string() }
+        Self {
+            name,
+            schedule,
+            status: "idle".to_string(),
+        }
     }
 
     pub(crate) fn start(&self) -> polars::prelude::PolarsResult<()> {
@@ -13,6 +21,4 @@ impl SimpleJob {
         pipeline.run().unwrap();
         Ok(())
     }
-    
-    
 }

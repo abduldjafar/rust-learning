@@ -1,8 +1,9 @@
-use polars::{error::PolarsResult, frame::DataFrame};
-use crate::{pipelines::Pipeline, sinks::{Sink, Sinker}, sources::{ Source, SourceKind}};
-
-
-
+use crate::{
+    pipelines::Pipeline,
+    sinks::{Sink, Sinker},
+    sources::{Source, SourceKind},
+};
+use polars::error::PolarsResult;
 
 #[derive(Clone)]
 pub struct SimplePipeline {
