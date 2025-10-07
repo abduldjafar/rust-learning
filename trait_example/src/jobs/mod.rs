@@ -1,13 +1,13 @@
 use crate::{pipelines::Pipeline, sinks::Sinker, sources::SourceKind};
 
 pub struct Job<'a> {
-    name: String,
+    name: &'a str,
     source: SourceKind<'a>,
     sink: Sinker<'a>,
 }
 
 impl<'a> Job<'a> {
-    pub fn new(name: String, source: SourceKind<'a>, sink: Sinker<'a>) -> Self {
+    pub fn new(name: &'a str, source: SourceKind<'a>, sink: Sinker<'a>) -> Self {
         Self { name, source, sink }
     }
 

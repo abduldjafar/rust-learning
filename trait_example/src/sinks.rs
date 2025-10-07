@@ -32,7 +32,8 @@ impl<'a> Sink for Sinker<'a> {
             Sinker::Parquet(path) => {
                 let mut file = File::create(path.as_ref())?;
                 let mut tmp = df.clone();
-                CsvWriter::new(&mut file).finish(&mut tmp)
+                ParquetWriter::new(&mut file).finish(&mut tmp)?;
+                Ok(())
             }
         }
     }

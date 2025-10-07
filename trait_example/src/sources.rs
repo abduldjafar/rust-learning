@@ -13,12 +13,12 @@ pub enum SourceKind<'a> {
 }
 
 impl<'a> SourceKind<'a> {
-    pub fn read_postgres(name: impl Into<Cow<'a, str>>) -> Self {
-        SourceKind::Postgres(name.into())
+    pub fn read_postgres(conn: impl Into<Cow<'a, str>>) -> Self {
+        SourceKind::Postgres(conn.into())
     }
 
-    pub fn read_parquet(name: impl Into<Cow<'a, str>>) -> Self {
-        SourceKind::Parquet(name.into())
+    pub fn read_parquet(path: impl Into<Cow<'a, str>>) -> Self {
+        SourceKind::Parquet(path.into())
     }
 }
 
