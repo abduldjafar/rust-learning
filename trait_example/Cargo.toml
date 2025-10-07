@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 polars = "0.51.0"
+polars-io = "0.51.0"

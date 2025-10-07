@@ -1,12 +1,24 @@
 use polars::error::PolarsResult;
 
-pub mod simple;
-pub trait Pipeline {
-    fn name(&self) -> String {
-        "simple".to_string()
+use crate::{
+    sinks::{Sink, Sinker},
+    sources::{Source, SourceKind},
+};
+
+#[derive(Clone)]
+pub struct Pipeline<'a> {
+    source: SourceKind<'a>,
+    sink: Sinker<'a>,
+}
+
+impl<'a> Pipeline<'a> {
+    pub fn new(source: SourceKind<'a>, sink: Sinker<'a>) -> Self {
+        Self { source, sink }
     }
 
-    fn run(&self) -> PolarsResult<()> {
+    pub fn run(&self) -> PolarsResult<()> {
+        let df = self.source.load_data()?;
+        self.sink.save_data(&df)?;
         Ok(())
     }
 }

@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use polars::prelude::*;
 
 pub trait Source {
@@ -5,36 +7,32 @@ pub trait Source {
 }
 
 #[derive(Clone)]
-pub enum SourceKind {
-    Parquet {
-        name: String, /*, path: PathBuf */
-    },
-    Postgres {
-        name: String, /*, dsn: String, query: String */
-    },
+pub enum SourceKind<'a> {
+    Parquet(Cow<'a, str>),
+    Postgres(Cow<'a, str>),
 }
 
-impl SourceKind {
-    pub fn read_postgres(name: String) -> Self {
-        SourceKind::Parquet { name }
+impl<'a> SourceKind<'a> {
+    pub fn read_postgres(name: impl Into<Cow<'a, str>>) -> Self {
+        SourceKind::Postgres(name.into())
     }
 
-    pub fn read_parquet(name: String) -> Self {
-        SourceKind::Parquet { name }
+    pub fn read_parquet(name: impl Into<Cow<'a, str>>) -> Self {
+        SourceKind::Parquet(name.into())
     }
 }
 
-impl Source for SourceKind {
+impl<'a> Source for SourceKind<'a> {
     fn load_data(&self) -> PolarsResult<DataFrame> {
         match self {
-            SourceKind::Parquet { name: _ } => {
+            SourceKind::Parquet(_name) => {
                 let df = df![
                     "a" => &[1, 2, 3],
                     "b" => &[4, 5, 6]
                 ]?;
                 Ok(df)
             }
-            SourceKind::Postgres { name: _ } => {
+            SourceKind::Postgres(_name) => {
                 let df = df![
                     "a" => &[1, 2, 3],
                     "b" => &[4, 5, 6]
