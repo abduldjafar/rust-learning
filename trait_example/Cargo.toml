@@ -5,3 +5,10 @@ edition = "2024"
 
 [dependencies]
 polars = { version = "0.51", features = ["lazy", "csv", "parquet"] }
+thiserror = "1"
+miette = { version = "7", features = ["fancy"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-error = "0.2"   # optional, better error source reporting
+
+

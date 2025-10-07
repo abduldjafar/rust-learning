@@ -1,9 +1,10 @@
 use std::borrow::Cow;
 
+use crate::errors::Result;
 use polars::prelude::*;
 
 pub trait Source {
-    fn load_data(&self) -> PolarsResult<DataFrame>;
+    fn load_data(&self) -> Result<DataFrame>;
 }
 
 #[derive(Clone)]
@@ -23,13 +24,10 @@ impl<'a> SourceKind<'a> {
 }
 
 impl<'a> Source for SourceKind<'a> {
-    fn load_data(&self) -> PolarsResult<DataFrame> {
+    fn load_data(&self) -> Result<DataFrame> {
         match self {
-            SourceKind::Parquet(_name) => {
-                let df = df![
-                    "a" => &[1, 2, 3],
-                    "b" => &[4, 5, 6]
-                ]?;
+            SourceKind::Parquet(path) => {
+                let df = ParquetReader::new(std::fs::File::open(path.as_ref())?).finish()?;
                 Ok(df)
             }
             SourceKind::Postgres(_name) => {
@@ -42,4 +40,3 @@ impl<'a> Source for SourceKind<'a> {
         }
     }
 }
-

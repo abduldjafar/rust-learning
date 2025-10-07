@@ -1,3 +1,6 @@
+use tracing::info;
+
+use crate::errors::Result;
 use crate::{pipelines::Pipeline, sinks::Sinker, sources::SourceKind};
 
 pub struct Job<'a> {
@@ -11,8 +14,8 @@ impl<'a> Job<'a> {
         Self { name, source, sink }
     }
 
-    pub fn run(&self) -> polars::prelude::PolarsResult<()> {
-        println!("Running job: {}", self.name);
+    pub fn run(&self) -> Result<()> {
+        info!("Running job: {}", self.name);
         let pipeline = Pipeline::new(self.source.clone(), self.sink.clone());
         pipeline.run()
     }

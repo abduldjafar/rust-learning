@@ -1,4 +1,4 @@
-use polars::error::PolarsResult;
+use crate::errors::Result;
 
 use crate::{
     sinks::{Sink, Sinker},
@@ -16,7 +16,7 @@ impl<'a> Pipeline<'a> {
         Self { source, sink }
     }
 
-    pub fn run(&self) -> PolarsResult<()> {
+    pub fn run(&self) -> Result<()> {
         let df = self.source.load_data()?;
         self.sink.save_data(&df)?;
         Ok(())

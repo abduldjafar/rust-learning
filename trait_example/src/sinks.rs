@@ -1,8 +1,9 @@
+use crate::errors::Result;
 use polars::prelude::*;
 use std::{borrow::Cow, fs::File};
 
 pub trait Sink {
-    fn save_data(&self, df: &DataFrame) -> PolarsResult<()>;
+    fn save_data(&self, df: &DataFrame) -> Result<()>;
 }
 
 #[derive(Clone, Debug)]
@@ -21,13 +22,14 @@ impl<'a> Sinker<'a> {
 }
 
 impl<'a> Sink for Sinker<'a> {
-    fn save_data(&self, df: &DataFrame) -> PolarsResult<()> {
+    fn save_data(&self, df: &DataFrame) -> Result<()> {
         match self {
             Sinker::Csv(path) => {
                 let mut file = File::create(path.as_ref())?;
                 // CsvWriter needs &mut DataFrame; clone to avoid mutating caller
                 let mut tmp = df.clone();
-                CsvWriter::new(&mut file).finish(&mut tmp)
+                CsvWriter::new(&mut file).finish(&mut tmp)?;
+                Ok(())
             }
             Sinker::Parquet(path) => {
                 let mut file = File::create(path.as_ref())?;
