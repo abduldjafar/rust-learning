@@ -3,7 +3,7 @@ use polars::prelude::*;
 use std::{borrow::Cow, fs::File};
 
 pub trait Sink {
-    fn save_data(&self, df: &DataFrame) -> Result<()>;
+    fn save_data(&self, df: &mut DataFrame) -> Result<()>;
 }
 
 #[derive(Clone, Debug)]
@@ -22,19 +22,17 @@ impl<'a> Sinker<'a> {
 }
 
 impl<'a> Sink for Sinker<'a> {
-    fn save_data(&self, df: &DataFrame) -> Result<()> {
+    fn save_data(&self, df: &mut DataFrame) -> Result<()> {
         match self {
             Sinker::Csv(path) => {
                 let mut file = File::create(path.as_ref())?;
                 // CsvWriter needs &mut DataFrame; clone to avoid mutating caller
-                let mut tmp = df.clone();
-                CsvWriter::new(&mut file).finish(&mut tmp)?;
+                CsvWriter::new(&mut file).finish(df)?;
                 Ok(())
             }
             Sinker::Parquet(path) => {
                 let mut file = File::create(path.as_ref())?;
-                let mut tmp = df.clone();
-                ParquetWriter::new(&mut file).finish(&mut tmp)?;
+                ParquetWriter::new(&mut file).finish(df)?;
                 Ok(())
             }
         }

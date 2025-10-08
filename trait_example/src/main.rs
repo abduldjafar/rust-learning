@@ -14,7 +14,16 @@ fn run() -> Result<()> {
         SourceKind::read_parquet("parquet"),
         Sinker::csv("output.csv"),
     );
-    job.run()
+
+    let job2 = Job::new(
+        "simple2",
+        SourceKind::read_postgres("postgres"),
+        Sinker::parquet("output.parquet"),
+    );
+
+    job2.run()?;
+    job.run()?;
+    Ok(())
 }
 
 fn main() -> Result<()> {

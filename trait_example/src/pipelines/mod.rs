@@ -17,8 +17,8 @@ impl<'a> Pipeline<'a> {
     }
 
     pub fn run(&self) -> Result<()> {
-        let df = self.source.load_data()?;
-        self.sink.save_data(&df)?;
+        let mut df = self.source.load_data()?;
+        self.sink.save_data(&mut df)?;
         Ok(())
     }
 }
