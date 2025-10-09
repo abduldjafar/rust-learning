@@ -17,8 +17,6 @@ pub trait Source {
 
 #[derive(Clone, Debug)]
 pub enum SourceKind<'a> {
-    Parquet(Cow<'a, str>),
-    Postgres(Cow<'a, str>),
     Http {
         url: Cow<'a, str>,
         headers: Option<HashMap<Cow<'a, str>, Cow<'a, str>>>,
@@ -29,13 +27,6 @@ pub enum SourceKind<'a> {
 }
 
 impl<'a> SourceKind<'a> {
-    pub fn read_postgres(conn: impl Into<Cow<'a, str>>) -> Self {
-        Self::Postgres(conn.into())
-    }
-
-    pub fn read_parquet(path: impl Into<Cow<'a, str>>) -> Self {
-        Self::Parquet(path.into())
-    }
 
     /// Minimal ctor: only URL; other HTTP options default to `None`.
     pub fn read_http(url: impl Into<Cow<'a, str>>) -> Self {
@@ -75,14 +66,6 @@ impl<'a> SourceKind<'a> {
 impl<'a> Source for SourceKind<'a> {
     async fn load_data(&self) -> Result<DataFrame> {
         match self {
-            SourceKind::Parquet(path) => {
-                let file = std::fs::File::open(path.as_ref())?;
-                Ok(ParquetReader::new(file).finish()?)
-            }
-            SourceKind::Postgres(_conn) => {
-                // placeholder demo frame
-                Ok(df!["a" => &[1, 2, 3], "b" => &[4, 5, 6]]?)
-            }
             SourceKind::Http {
                 url,
                 headers,

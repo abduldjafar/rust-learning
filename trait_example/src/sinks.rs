@@ -57,6 +57,7 @@ impl<'a> Sinker<'a> {
         table: impl Into<Cow<'a, str>>,
         auto_create: bool,
         upsert: bool,
+        primary_key:  Option<Cow<'a, str>>,
     ) -> Self {
         Self::Postgres {
             pool,
@@ -64,7 +65,7 @@ impl<'a> Sinker<'a> {
             table: table.into(),
             auto_create,
             upsert,
-            primary_key: None,
+            primary_key: primary_key,
         }
     }
 
@@ -161,7 +162,6 @@ pub async fn create_table_if_not_exists(
         pk = pk_clause
     );
 
-    tracing::info!("Creating table: {sql}");
     sqlx::query(&sql).execute(pool).await?;
     Ok(())
 }
