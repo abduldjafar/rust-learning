@@ -7,15 +7,23 @@ use std::{
 
 use async_trait::async_trait;
 use polars::prelude::*;
-use sqlx::{postgres::PgPoolCopyExt, Pool, Postgres};
+use sqlx::{postgres::PgPoolCopyExt, Acquire, Pool, Postgres};
+
 use crate::errors::Result;
-use sqlx::Acquire;
+
+// ============================================================================
+// Trait: Sink
+// ============================================================================
 
 /// Anything that can persist a `DataFrame`.
 #[async_trait]
 pub trait Sink {
     async fn save_data(&self, df: &mut DataFrame) -> Result<()>;
 }
+
+// ============================================================================
+// Enum: Sinker
+// ============================================================================
 
 #[derive(Clone, Debug)]
 pub enum Sinker<'a> {
@@ -32,14 +40,17 @@ pub enum Sinker<'a> {
 }
 
 impl<'a> Sinker<'a> {
+    /// Create a CSV sinker.
     pub fn csv(path: impl Into<Cow<'a, str>>) -> Self {
         Self::Csv(path.into())
     }
 
+    /// Create a Parquet sinker.
     pub fn parquet(path: impl Into<Cow<'a, str>>) -> Self {
         Self::Parquet(path.into())
     }
 
+    /// Create a Postgres sinker.
     pub fn postgres(
         pool: Arc<Pool<Postgres>>,
         schema: impl Into<Cow<'a, str>>,
@@ -66,6 +77,10 @@ impl<'a> Sinker<'a> {
     }
 }
 
+// ============================================================================
+// Impl: Sink for Sinker
+// ============================================================================
+
 #[async_trait]
 impl<'a> Sink for Sinker<'a> {
     async fn save_data(&self, df: &mut DataFrame) -> Result<()> {
@@ -77,10 +92,12 @@ impl<'a> Sink for Sinker<'a> {
                     .with_quote_style(QuoteStyle::Necessary)
                     .finish(df)?;
             }
+
             Sinker::Parquet(path) => {
                 let mut file = File::create(path.as_ref())?;
                 ParquetWriter::new(&mut file).finish(df)?;
             }
+
             Sinker::Postgres {
                 pool,
                 schema,
@@ -105,13 +122,16 @@ impl<'a> Sink for Sinker<'a> {
     }
 }
 
-/* ---------- Postgres helpers ---------- */
+// ============================================================================
+// Postgres Helpers
+// ============================================================================
 
 /// Double-quote an identifier and escape inner quotes.
 fn q(id: &str) -> String {
     format!("\"{}\"", id.replace('"', "\"\""))
 }
 
+/// Create a table in Postgres if it doesn't already exist.
 pub async fn create_table_if_not_exists(
     df: &DataFrame,
     pool: &Pool<Postgres>,
@@ -141,34 +161,37 @@ pub async fn create_table_if_not_exists(
         pk = pk_clause
     );
 
-    tracing::info!("creating table: {sql}");
+    tracing::info!("Creating table: {sql}");
     sqlx::query(&sql).execute(pool).await?;
     Ok(())
 }
 
-/* ---------- dtype mapping ---------- */
+// ============================================================================
+// Data Type Mapping
+// ============================================================================
 
+/// Map Polars `DataType` to PostgreSQL type string.
 pub fn polars_to_postgres_dtype(dtype: &DataType) -> Result<String> {
     use DataType::*;
 
     let ty = match dtype {
-        // integers (Postgres has no unsigned types)
+        // Integers (Postgres has no unsigned types)
         Int8 | Int16 => "smallint",
         Int32 => "int4",
         Int64 => "int8",
         UInt8 | UInt16 => "int4",
         UInt32 | UInt64 => "int8",
 
-        // floats
+        // Floats
         Float32 => "float4",
         Float64 => "float8",
 
-        // booleans & text/binary
+        // Booleans & Text/Binary
         Boolean => "boolean",
-        String => "text",  // Changed from Utf8 to String for newer Polars versions
+        String => "text",
         Binary => "bytea",
 
-        // dates & times
+        // Dates & Times
         Date => "date",
         Time => "time",
         Datetime(_, tz) => {
@@ -180,21 +203,25 @@ pub fn polars_to_postgres_dtype(dtype: &DataType) -> Result<String> {
         }
         Duration(_) => "interval",
 
-        // decimals (no precision here → generic NUMERIC)
-        Decimal => "numeric",  // Added pattern matching for Decimal
+        // Decimals
+        Decimal => "numeric",
 
-        // nested / complex → JSONB is a good default
+        // Nested / Complex → JSONB
         List(_) | Struct(_) => "jsonb",
 
-        // categories/enums/null → text
+        // Categories/Enums/Null → Text
         Categorical(_, _) | Enum(_, _) | Null => "text",
 
-        // catch-all
+        // Catch-all
         _ => "text",
     };
 
     Ok(ty.to_string())
 }
+
+// ============================================================================
+// Save Data to Postgres
+// ============================================================================
 
 async fn save_data_to_postgres(
     df: &mut DataFrame,
@@ -205,21 +232,26 @@ async fn save_data_to_postgres(
     upsert: bool,
     primary_key: Option<&str>,
 ) -> Result<()> {
-    // 1) create table if needed
+    // 1) Create table if needed
     if auto_create {
         create_table_if_not_exists(df, pool, schema, table, primary_key).await?;
     }
 
     // Collect column names once, in frame order
-    let cols_df: Vec<String> = df.get_column_names_owned().iter().map(|c| c.to_string()).collect();
+    let cols_df: Vec<String> = df
+        .get_column_names_owned()
+        .iter()
+        .map(|c| c.to_string())
+        .collect();
     let cols_quoted: Vec<String> = cols_df.iter().map(|c| q(c)).collect();
 
     if upsert {
-        // --- UPSERT path: stage -> copy -> insert on conflict
+        // ────────────────────────────────────────────────────────────────────
+        // UPSERT path: stage -> copy -> insert on conflict
+        // ────────────────────────────────────────────────────────────────────
         let pk = match primary_key {
             Some(pk) => pk,
             None => {
-                // return an Io error to match your DataFlowError::Io
                 return Err(std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
                     "upsert requested but no primary key was provided",
@@ -228,7 +260,7 @@ async fn save_data_to_postgres(
             }
         };
 
-        // unique, process-local stage name (no extra deps)
+        // Unique, process-local stage name
         let ts = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -243,7 +275,7 @@ async fn save_data_to_postgres(
             "CREATE TEMP TABLE {stage} (LIKE {schema}.{table} INCLUDING ALL) ON COMMIT DROP",
             stage = q(&stage),
             schema = q(schema),
-            table  = q(table),
+            table = q(table),
         );
         sqlx::query(&create_stage).execute(&mut *tx).await?;
 
@@ -251,22 +283,23 @@ async fn save_data_to_postgres(
         let copy_sql = format!(
             "COPY {stage} ({cols}) FROM STDIN WITH (FORMAT csv)",
             stage = q(&stage),
-            cols  = cols_quoted.join(", "),
+            cols = cols_quoted.join(", "),
         );
-        let conn = tx.acquire().await?;              // -> &mut PgConnection
-        let mut writer = conn.copy_in_raw(&copy_sql).await?; 
+        let conn = tx.acquire().await?; // -> &mut PgConnection
+        let mut writer = conn.copy_in_raw(&copy_sql).await?;
 
-        // stream df -> csv bytes -> write
+        // Stream df -> csv bytes -> write
         const CHUNK: usize = 100_000;
         let height = df.height();
         for start in (0..height).step_by(CHUNK) {
             let len = (height - start).min(CHUNK);
             let chunk = df.slice(start as i64, len);
             let bytes = df_chunk_to_csv_bytes(chunk).await?;
-            writer.send(bytes).await?;  // Changed from write_all to send
+            writer.send(bytes).await?;
         }
         writer.finish().await?;
 
+        // Build UPDATE clause for non-PK columns
         let non_pk_sets = cols_df
             .iter()
             .filter(|c| c.as_str() != pk)
@@ -279,21 +312,23 @@ async fn save_data_to_postgres(
              SELECT {cols} FROM {stage}
              ON CONFLICT ({pk}) DO UPDATE SET {sets}",
             schema = q(schema),
-            table  = q(table),
-            cols   = cols_quoted.join(", "),
-            stage  = q(&stage),
-            pk     = q(pk),
-            sets   = non_pk_sets,
+            table = q(table),
+            cols = cols_quoted.join(", "),
+            stage = q(&stage),
+            pk = q(pk),
+            sets = non_pk_sets,
         );
         sqlx::query(&insert_sql).execute(&mut *tx).await?;
         tx.commit().await?;
     } else {
-        // --- Append path: direct COPY into target
+        // ────────────────────────────────────────────────────────────────────
+        // Append path: direct COPY into target
+        // ────────────────────────────────────────────────────────────────────
         let copy_sql = format!(
             "COPY {schema}.{table} ({cols}) FROM STDIN WITH (FORMAT csv)",
             schema = q(schema),
-            table  = q(table),
-            cols   = cols_quoted.join(", "),
+            table = q(table),
+            cols = cols_quoted.join(", "),
         );
         let mut writer = pool.copy_in_raw(&copy_sql).await?;
 
@@ -303,7 +338,7 @@ async fn save_data_to_postgres(
             let len = (height - start).min(CHUNK);
             let chunk = df.slice(start as i64, len);
             let bytes = df_chunk_to_csv_bytes(chunk).await?;
-            writer.send(bytes).await?;  // Changed from write_all to send
+            writer.send(bytes).await?;
         }
         writer.finish().await?;
     }
@@ -311,14 +346,18 @@ async fn save_data_to_postgres(
     Ok(())
 }
 
+// ============================================================================
+// CSV Chunk Conversion
+// ============================================================================
+
 /// Build CSV bytes for a DataFrame *chunk* off the main thread.
 async fn df_chunk_to_csv_bytes(chunk: DataFrame) -> Result<Vec<u8>> {
     tokio::task::spawn_blocking(move || {
         let mut tmp = chunk.clone(); // CsvWriter needs &mut DataFrame
         let mut buf = Vec::with_capacity(tmp.height().saturating_mul(64));
         CsvWriter::new(&mut buf)
-            .include_header(false)                          // COPY expects no header
-            .with_quote_style(QuoteStyle::Necessary) // Polars 0.51 API
+            .include_header(false) // COPY expects no header
+            .with_quote_style(QuoteStyle::Necessary)
             .finish(&mut tmp)?;
         Ok(buf)
     })

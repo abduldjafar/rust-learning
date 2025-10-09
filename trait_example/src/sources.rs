@@ -229,7 +229,7 @@ pub async fn http_request_to_df(req: RequestBuilder) -> Result<DataFrame> {
     let array_val = match val {
         serde_json::Value::Array(_) => val,
         serde_json::Value::Object(_) => serde_json::Value::Array(vec![val]),
-        other => serde_json::Value::Null,
+        _ => serde_json::Value::Null,
     };
 
     let arr_bytes = serde_json::to_vec(&array_val)?;
