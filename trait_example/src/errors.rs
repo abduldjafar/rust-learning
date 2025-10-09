@@ -8,6 +8,8 @@ pub enum Error {
     HeaderName(String),
     HeaderValue(String),
     SerdeJson(String),
+    Sqlx(String),
+    JoinError(String),
 }
 
 impl core::fmt::Display for Error {
@@ -25,4 +27,6 @@ crate::impl_from_error!(
     reqwest::header::InvalidHeaderValue => HeaderValue,
     reqwest::header::InvalidHeaderName => HeaderName,
     serde_json::Error => SerdeJson,
+    sqlx::Error => Sqlx,
+    tokio::task::JoinError => JoinError,
 );

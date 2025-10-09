@@ -204,6 +204,7 @@ pub fn http_builder<'a>(
 /// Fetch JSON/NDJSON and parse into a `DataFrame`, then flatten nested structs.
 pub async fn http_request_to_df(req: RequestBuilder) -> Result<DataFrame> {
     let res = req.send().await?.error_for_status()?;
+    let mut df = DataFrame::empty();
 
     // own content-type before consuming the body
     let ctype = res
@@ -217,7 +218,7 @@ pub async fn http_request_to_df(req: RequestBuilder) -> Result<DataFrame> {
 
     // NDJSON (one object per line)
     if ctype.contains("ndjson") || ctype.contains("jsonlines") {
-        let df = JsonReader::new(Cursor::new(bytes))
+        df = JsonReader::new(Cursor::new(bytes))
             .with_json_format(JsonFormat::JsonLines)
             .finish()?;
         return Ok(normalize_unknown(&df)?);
@@ -232,7 +233,7 @@ pub async fn http_request_to_df(req: RequestBuilder) -> Result<DataFrame> {
     };
 
     let arr_bytes = serde_json::to_vec(&array_val)?;
-    let df = JsonReader::new(Cursor::new(arr_bytes))
+    df = JsonReader::new(Cursor::new(arr_bytes))
         .with_json_format(JsonFormat::Json)
         .finish()?;
 

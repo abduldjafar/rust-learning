@@ -1,3 +1,7 @@
+use std::sync::Arc;
+
+use sqlx::postgres::PgPoolOptions;
+use sqlx::{Pool, Postgres};
 use tracing::info;
 use trait_example::errors::Result;
 use trait_example::{jobs::Job, sinks::Sinker, sources::SourceKind};
@@ -21,9 +25,25 @@ async fn run() -> Result<()> {
         SourceKind::http("https://api.restful-api.dev/objects").build(),
         Sinker::csv("output2.csv"),
     );
+    let pool: Arc<Pool<Postgres>> = Arc::new( PgPoolOptions::new()
+    .max_connections(10)
+    .connect("postgres://poatgres:poatgres@localhost/employee_activity").await?);
+
+    let job4 = Job::new(
+        "simple4",
+        SourceKind::http("https://api.restful-api.dev/objects").build(),
+        Sinker::postgres(
+            pool,
+            "public",
+            "output3",
+            true,
+            false,
+        ),
+    );
 
     job2.run().await?;
     job3.run().await?;
+    job4.run().await?;
     Ok(())
 }
 

@@ -18,7 +18,7 @@ impl<'a> Pipeline<'a> {
 
     pub async fn run(&self) -> Result<()> {
         let mut df = self.source.load_data().await?;
-        self.sink.save_data(&mut df)?;
+        self.sink.save_data(&mut df).await?;
         Ok(())
     }
 }
