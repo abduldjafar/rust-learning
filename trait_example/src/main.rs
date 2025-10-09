@@ -4,16 +4,11 @@ use trait_example::{jobs::Job, sinks::Sinker, sources::SourceKind};
 
 fn init_tracing() {
     tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
+        .with_max_level(tracing::Level::INFO)
         .init();
 }
 
-fn run() -> Result<()> {
-    let job = Job::new(
-        "simple",
-        SourceKind::read_parquet("parquet"),
-        Sinker::csv("output.csv"),
-    );
+async fn run() -> Result<()> {
 
     let job2 = Job::new(
         "simple2",
@@ -21,13 +16,21 @@ fn run() -> Result<()> {
         Sinker::parquet("output.parquet"),
     );
 
-    job2.run()?;
-    job.run()?;
+    let job3 = Job::new(
+        "simple3",
+        SourceKind::http("https://api.restful-api.dev/objects").build(),
+        Sinker::csv("output2.csv"),
+    );
+
+    job2.run().await?;
+    job3.run().await?;
     Ok(())
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     init_tracing();
     info!("App starting...");
-    run()
+    run().await?;
+    Ok(())
 }

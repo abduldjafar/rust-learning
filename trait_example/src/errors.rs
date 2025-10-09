@@ -4,6 +4,10 @@ pub type Result<T> = core::result::Result<T, Error>;
 pub enum Error {
     Polars(String),
     Io(String),
+    Reqwest(String),
+    HeaderName(String),
+    HeaderValue(String),
+    SerdeJson(String),
 }
 
 impl core::fmt::Display for Error {
@@ -16,5 +20,9 @@ impl std::error::Error for Error {}
 
 crate::impl_from_error!(
     polars::prelude::PolarsError => Polars,
-    std::io::Error => Io
+    std::io::Error => Io,
+    reqwest::Error => Reqwest,
+    reqwest::header::InvalidHeaderValue => HeaderValue,
+    reqwest::header::InvalidHeaderName => HeaderName,
+    serde_json::Error => SerdeJson,
 );

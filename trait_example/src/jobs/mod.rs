@@ -14,9 +14,9 @@ impl<'a> Job<'a> {
         Self { name, source, sink }
     }
 
-    pub fn run(&self) -> Result<()> {
+    pub async fn run(&self) -> Result<()> {
         info!("Running job: {}", self.name);
         let pipeline = Pipeline::new(self.source.clone(), self.sink.clone());
-        pipeline.run()
+        pipeline.run().await
     }
 }
