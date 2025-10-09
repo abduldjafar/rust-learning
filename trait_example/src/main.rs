@@ -40,10 +40,10 @@ async fn run() -> Result<()> {
             false,
         ),
     );
-
-    job2.run().await?;
-    job3.run().await?;
-    job4.run().await?;
+    let (res2, res3, res4) = tokio::join!(job2.run(), job3.run(), job4.run());
+    res2?;
+    res3?;
+    res4?;
     Ok(())
 }
 
