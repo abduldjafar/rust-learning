@@ -180,12 +180,13 @@ pub fn http_builder<'a>(
     if let Some((user, pass)) = standard_auth {
         req = req.basic_auth(user.as_ref(), Some(pass.as_ref()));
     }
-
+    tracing::info!("req: {:?}", req);
     Ok(req)
 }
 
 /// Fetch JSON/NDJSON and parse into a `DataFrame`, then flatten nested structs.
 pub async fn http_request_to_df(req: RequestBuilder) -> Result<DataFrame> {
+   
     let res = req.send().await?.error_for_status()?;
     let mut df = DataFrame::empty();
 
@@ -204,7 +205,7 @@ pub async fn http_request_to_df(req: RequestBuilder) -> Result<DataFrame> {
         df = JsonReader::new(Cursor::new(bytes))
             .with_json_format(JsonFormat::JsonLines)
             .finish()?;
-        return Ok(normalize_unknown(&df)?);
+        return Ok(df);
     }
 
     // Regular JSON: array or single object → wrap as array
@@ -220,7 +221,7 @@ pub async fn http_request_to_df(req: RequestBuilder) -> Result<DataFrame> {
         .with_json_format(JsonFormat::Json)
         .finish()?;
 
-    Ok(normalize_unknown(&df)?)
+    Ok(df)
 }
 
 /// Flatten nested columns without touching Utf8 JSON strings:
